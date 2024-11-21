@@ -1,8 +1,10 @@
--- MySQL dump 10.13  Distrib 8.0.38, for Win64 (x86_64)
+CREATE DATABASE  IF NOT EXISTS `subway_station_proj` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `subway_station_proj`;
+-- MySQL dump 10.13  Distrib 8.0.40, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: subway_station_proj
 -- ------------------------------------------------------
--- Server version	8.0.39
+-- Server version	8.0.40
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -16,34 +18,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `member`
+-- Table structure for table `deal_wishlist`
 --
 
-DROP TABLE IF EXISTS `member`;
+DROP TABLE IF EXISTS `deal_wishlist`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `member` (
-  `MEMB_NO` int unsigned NOT NULL AUTO_INCREMENT,
-  `MEMB_ID` varchar(20) DEFAULT NULL,
-  `MEMB PSWD` varchar(20) DEFAULT NULL,
-  `MEMB_NAME` varchar(10) DEFAULT NULL,
-  `ETC1` varchar(45) DEFAULT NULL,
-  `ETC2` varchar(45) DEFAULT NULL,
-  `REGDT` date DEFAULT (curdate()),
-  `UPDDT` date DEFAULT NULL,
-  `DELDT` date DEFAULT NULL,
-  `DEL_FLAG` char(1) DEFAULT 'N',
-  PRIMARY KEY (`MEMB_NO`)
+CREATE TABLE `deal_wishlist` (
+  `WISH_NO` int unsigned NOT NULL AUTO_INCREMENT,
+  `WISH_BRD_NO` int unsigned NOT NULL,
+  `WISH_MEMB_NO` int unsigned NOT NULL,
+  PRIMARY KEY (`WISH_NO`),
+  KEY `WISH_BRD_NO` (`WISH_BRD_NO`),
+  KEY `WISH_MEMB_NO` (`WISH_MEMB_NO`),
+  CONSTRAINT `deal_wishlist_ibfk_1` FOREIGN KEY (`WISH_BRD_NO`) REFERENCES `deal_board` (`DEAL_BRD_NO`),
+  CONSTRAINT `deal_wishlist_ibfk_2` FOREIGN KEY (`WISH_MEMB_NO`) REFERENCES `member` (`MEMB_NO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `member`
+-- Dumping data for table `deal_wishlist`
 --
 
-LOCK TABLES `member` WRITE;
-/*!40000 ALTER TABLE `member` DISABLE KEYS */;
-/*!40000 ALTER TABLE `member` ENABLE KEYS */;
+LOCK TABLES `deal_wishlist` WRITE;
+/*!40000 ALTER TABLE `deal_wishlist` DISABLE KEYS */;
+/*!40000 ALTER TABLE `deal_wishlist` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -55,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-01 13:41:26
+-- Dump completed on 2024-11-10 17:39:59
