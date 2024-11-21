@@ -21,8 +21,7 @@ def fetch_station_data():
         return []
     
 station_data = fetch_station_data()  # 역 데이터 로드
-
-# 오류일 경우에만 JSOM응답 반환, 페이지 렌더링 엔드포인트
+# 오류일 경우에만 JSON응답 반환, 페이지 렌더링 엔드포인트
 def search_station():
     requested_station_name = request.args.get('station_name', '').strip()
     logging.info(f"Requested Station: {requested_station_name}")
