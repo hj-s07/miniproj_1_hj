@@ -11,3 +11,4 @@ class dbconn:
             port = 3306,
             autocommit = True            
         )
+import pymysql
