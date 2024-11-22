@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 인스턴스와 MySQL을 포함하는 VPC와 보안 설정 배포
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: EC2 인스턴스 유형
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+    ConstraintDescription: 유효한 EC2 인스턴스 유형을 선택하세요.
+
+Resources:
+  # VPC 생성
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"  # VPC의 CIDR 블록
+      EnableDnsSupport: "true"  # DNS 지원 활성화
+      EnableDnsHostnames: "true"  # DNS 호스트 이름 지원 활성화
+
+  # EC2용 프라이빗 서브넷 생성
+  MyPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: "10.0.1.0/24"  # 서브넷의 CIDR 블록
+      AvailabilityZone: "ap-northeast-2a"  # 서울 리전의 가용 영역
+      MapPublicIpOnLaunch: "false"  # 프라이빗 서브넷, 퍼블릭 IP 할당 안 함
+
+  # 퍼블릭 서브넷 생성 (인터넷에 접근할 수 있도록)
+  MyPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: "10.0.0.0/24"  # 퍼블릭 서브넷의 CIDR 블록
+      AvailabilityZone: "ap-northeast-2a"  # 서울 리전의 가용 영역
+      MapPublicIpOnLaunch: "true"  # 퍼블릭 서브넷, 퍼블릭 IP 할당
+
+  # 인터넷 게이트웨이 생성
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: {}
+
+  # 인터넷 게이트웨이를 VPC에 연결
+  MyInternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  # NAT Gateway를 위한 Elastic IP 생성
+  MyEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc  # VPC용 EIP 생성
+
+  # NAT Gateway 생성
+  MyNATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt MyEIP.AllocationId
+      SubnetId: !Ref MyPublicSubnet  # 퍼블릭 서브넷에 NAT Gateway 배치
+
+  # 라우팅 테이블 생성 (프라이빗 서브넷에서 인터넷으로 라우팅)
+  MyPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+
+  # NAT Gateway를 통해 라우팅
+  MyPrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref MyPrivateRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"  # 모든 인터넷 트래픽
+      NatGatewayId: !Ref MyNATGateway  # NAT Gateway를 통해 라우팅
+
+  # 라우팅 테이블을 프라이빗 서브넷에 연결
+  MyPrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPrivateSubnet
+      RouteTableId: !Ref MyPrivateRouteTable
+
+  # 보안 그룹 생성
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SSH 및 MySQL 접근 허용"
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "168.126.63.1/32"  # 특정 IP에서만 SSH 접근 허용
+        - IpProtocol: "tcp"
+          FromPort: "3306"
+          ToPort: "3306"
+          CidrIp: "10.0.0.0/16"  # VPC 내부에서만 MySQL 접근 허용
+
+  # EC2 인스턴스 생성
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref MySecurityGroup  # 보안 그룹 연결
+      SubnetId: !Ref MyPrivateSubnet  # 프라이빗 서브넷에 EC2 배치
+      KeyName: "my-key"  # EC2 접근을 위한 SSH 키
+      ImageId: "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI
+      Tags:
+        - Key: Name
+          Value: MyEC2Instance  # EC2 인스턴스 이름
+
+Outputs:
+  EC2InstanceId:
+    Description: "EC2 인스턴스 ID"
+    Value: !Ref MyEC2Instance
+  PublicIP:
+    Description: "EC2 인스턴스의 퍼블릭 IP"
+    Value: !GetAtt MyEC2Instance.PublicIp  # EC2 인스턴스의 퍼블릭 IP 출력
